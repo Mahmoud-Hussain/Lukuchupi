@@ -34,10 +34,22 @@ let myUsername;
 let isConnected = false;
 let isMuted = false;
 let isDeafened = false;
-let audioContext;
-let analyser;
-let microphone;
-let vadIntervals = []; // Store interval IDs for VAD cleanup
+
+// Global Audio Context for VAD (Single Instance)
+let globalAudioContext;
+let vadIntervals = [];
+
+// Debug Logger
+function logDebug(msg) {
+    console.log(`[DEBUG] ${msg}`);
+    // Optional: visible logs for user to report issues
+    // const div = document.createElement('div');
+    // div.style.color = 'orange';
+    // div.style.fontSize = '10px';
+    // div.innerText = `[SYS] ${msg}`;
+    // messagesContainer.appendChild(div);
+    // messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
 
 // 1. Handle Username Submission
 usernameForm.addEventListener('submit', (e) => {
@@ -123,6 +135,14 @@ joinBtn.addEventListener('click', () => {
     if (isConnected) {
         leaveVoiceChannel();
     } else {
+        // Init Audio Context on User Interaction
+        if (!globalAudioContext) {
+            globalAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (globalAudioContext.state === 'suspended') {
+            globalAudioContext.resume();
+        }
+
         // Animation Start
         joinBtn.classList.add('joining');
         setTimeout(() => {
@@ -175,6 +195,7 @@ function initializeVoiceConnection(deviceId = null) {
 
     navigator.mediaDevices.getUserMedia(constraints).then(stream => {
         myStream = stream;
+        logDebug("Microphone access granted.");
 
         if (myStream.getAudioTracks().length > 0) {
             myStream.getAudioTracks()[0].enabled = !isMuted;
@@ -186,7 +207,7 @@ function initializeVoiceConnection(deviceId = null) {
 
         // Handle new user connection (modified to accept object)
         socket.on('user-connected', ({ userId, username }) => {
-            console.log(`User connected: ${username} (${userId})`);
+            logDebug(`User connected: ${username} (${userId})`);
             addUserToVoiceList(userId, username);
             connectToNewUser(userId, stream);
         });
@@ -196,6 +217,7 @@ function initializeVoiceConnection(deviceId = null) {
         socket.on('ice-candidate', handleIceCandidate);
 
         socket.on('user-disconnected', userId => {
+            logDebug(`User disconnected: ${userId}`);
             if (peers[userId]) {
                 peers[userId].close();
                 delete peers[userId];
@@ -255,13 +277,8 @@ function removeUserFromVoiceList(userId) {
     if (el) el.remove();
 }
 
-function createMyVideoElement() {
-    const video = document.createElement('audio');
-    video.muted = true;
-    return video;
-}
-
 function connectToNewUser(userId, stream) {
+    logDebug(`Calling new user: ${userId}`);
     const peer = createPeerConnection(userId);
     stream.getTracks().forEach(track => peer.addTrack(track, stream));
     peers[userId] = peer;
@@ -275,6 +292,7 @@ function connectToNewUser(userId, stream) {
 }
 
 function handleOffer(payload) {
+    logDebug(`Received offer from: ${payload.caller}`);
     const peer = createPeerConnection(payload.caller);
     peers[payload.caller] = peer;
 
@@ -303,6 +321,7 @@ function handleOffer(payload) {
 }
 
 function handleAnswer(payload) {
+    logDebug(`Received answer from: ${payload.caller}`);
     const peer = peers[payload.caller];
     if (peer) {
         peer.setRemoteDescription(payload.sdp).then(() => {
@@ -340,7 +359,12 @@ function createPeerConnection(targetUserId) {
         }
     };
 
+    peer.onconnectionstatechange = () => {
+        logDebug(`Connection state with ${targetUserId}: ${peer.connectionState}`);
+    };
+
     peer.ontrack = event => {
+        logDebug(`Received TRACK from: ${targetUserId}`);
         const audio = document.createElement('audio');
         audio.id = targetUserId;
         audio.autoplay = true;
@@ -358,45 +382,58 @@ function addVideoStream(element, stream) {
     element.srcObject = stream;
     element.addEventListener('loadedmetadata', () => {
         element.play().catch(e => {
-            console.log("Auto-play prevented.", e);
+            console.error("Auto-play prevented. Please interact with document.", e);
         });
     });
+
+    // Explicit play attempt for good measure
+    setTimeout(() => {
+        element.play().catch(e => console.error("Retry play failed", e));
+    }, 1000);
+
     videoGrid.append(element);
 }
 
 // Voice Activity Detection (VAD)
 function setupVoiceActivityDetection(stream, userId) {
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const source = audioCtx.createMediaStreamSource(stream);
-    const analyser = audioCtx.createAnalyser();
-    analyser.fftSize = 256;
-    source.connect(analyser);
+    if (!globalAudioContext) {
+        logDebug("Warning: AudioContext not initialized.");
+        return;
+    }
 
-    const bufferLength = analyser.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
+    try {
+        const source = globalAudioContext.createMediaStreamSource(stream);
+        const analyser = globalAudioContext.createAnalyser();
+        analyser.fftSize = 256;
+        source.connect(analyser);
 
-    const checkSpeaking = () => {
-        // Check if user still exists in list, else stop
-        const userEl = document.getElementById(`voice-user-${userId}`);
-        if (!userEl) return;
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
 
-        analyser.getByteFrequencyData(dataArray);
-        let sum = 0;
-        for (let i = 0; i < bufferLength; i++) {
-            sum += dataArray[i];
-        }
-        const average = sum / bufferLength;
+        const checkSpeaking = () => {
+            const userEl = document.getElementById(`voice-user-${userId}`);
+            if (!userEl) return;
 
-        const avatar = userEl.querySelector('.voice-avatar');
-        if (average > 10) { // Threshold for "speaking"
-            avatar.classList.add('speaking');
-        } else {
-            avatar.classList.remove('speaking');
-        }
-    };
+            analyser.getByteFrequencyData(dataArray);
+            let sum = 0;
+            for (let i = 0; i < bufferLength; i++) {
+                sum += dataArray[i];
+            }
+            const average = sum / bufferLength;
 
-    const intervalId = setInterval(checkSpeaking, 100);
-    vadIntervals.push(intervalId);
+            const avatar = userEl.querySelector('.voice-avatar');
+            if (average > 10) {
+                avatar.classList.add('speaking');
+            } else {
+                avatar.classList.remove('speaking');
+            }
+        };
+
+        const intervalId = setInterval(checkSpeaking, 100);
+        vadIntervals.push(intervalId);
+    } catch (e) {
+        console.error("VAD Setup Error:", e);
+    }
 }
 
 // Controls
@@ -434,7 +471,6 @@ settingsBtn.addEventListener('click', () => {
 
 closeSettingsBtn.addEventListener('click', () => {
     settingsModal.classList.add('hidden');
-    // Optionally stop visualizer to save resources
 });
 
 async function enumerateDevices() {
@@ -452,9 +488,6 @@ async function enumerateDevices() {
 
 micSelect.addEventListener('change', () => {
     if (isConnected) {
-        // Restart connection with new device (Advanced: usually requires renegotiation or track replacement)
-        // For simplicity: We alert user to rejoin. 
-        // Or we can replace track:
         const deviceId = micSelect.value;
         navigator.mediaDevices.getUserMedia({ audio: { deviceId: { exact: deviceId } } }).then(stream => {
             const audioTrack = stream.getAudioTracks()[0];
@@ -464,7 +497,6 @@ micSelect.addEventListener('change', () => {
                 myStream.removeTrack(oldTrack);
                 myStream.addTrack(audioTrack);
 
-                // Replace track in all peer connections
                 Object.values(peers).forEach(peer => {
                     const sender = peer.getSenders().find(s => s.track.kind === 'audio');
                     if (sender) sender.replaceTrack(audioTrack);
@@ -478,11 +510,11 @@ micSelect.addEventListener('change', () => {
 
 function setupMicVisualizer(stream) {
     if (!stream) return;
-    if (audioContext) audioContext.close();
+    if (!globalAudioContext) globalAudioContext = new (window.AudioContext || window.webkitAudioContext)();
 
-    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    const source = audioContext.createMediaStreamSource(stream);
-    analyser = audioContext.createAnalyser();
+    // Note: Creating multiple sources from same stream in same context is fine.
+    const source = globalAudioContext.createMediaStreamSource(stream);
+    const analyser = globalAudioContext.createAnalyser();
     analyser.fftSize = 256;
     source.connect(analyser);
 
@@ -490,8 +522,7 @@ function setupMicVisualizer(stream) {
     const dataArray = new Uint8Array(bufferLength);
 
     function draw() {
-        if (settingsModal.classList.contains('hidden')) return; // Pause if hidden
-
+        if (settingsModal.classList.contains('hidden')) return;
         requestAnimationFrame(draw);
         analyser.getByteFrequencyData(dataArray);
 
@@ -500,7 +531,7 @@ function setupMicVisualizer(stream) {
             sum += dataArray[i];
         }
         const average = sum / bufferLength;
-        const width = (average / 255) * 100 * 2; // Amplify visual
+        const width = (average / 255) * 100 * 2;
 
         micBar.style.width = Math.min(width, 100) + '%';
     }
