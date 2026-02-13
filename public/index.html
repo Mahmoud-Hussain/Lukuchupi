@@ -44,15 +44,36 @@
         <!-- Main Chat Area -->
         <div class="main-chat-area">
             <div class="chat-header">
-                <span class="channel-icon">🔊</span> General
+                <span class="channel-icon">#</span> General Text & Voice
             </div>
             <div class="chat-content">
-                <div class="welcome-message">
-                    <h1>Welcome to #General</h1>
-                    <p>This is the start of the Lukuchupi voice channel.</p>
+                <div class="messages-container" id="messages-container">
+                    <!-- Messages will be injected here -->
+                    <div class="welcome-message">
+                        <h1>Welcome to #General</h1>
+                        <p>This is the start of the Lukuchupi channel.</p>
+                    </div>
                 </div>
+                
+                <div class="message-input-area">
+                    <form id="message-form">
+                        <input type="text" id="message-input" placeholder="Message #General" autocomplete="off">
+                    </form>
+                </div>
+
                 <div id="video-grid"></div> <!-- Hidden video elements for audio functionality -->
             </div>
+        </div>
+    </div>
+
+    <!-- Username Modal -->
+    <div id="username-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Enter your Username</h2>
+            <form id="username-form">
+                <input type="text" id="username-input" placeholder="Username" required autocomplete="off">
+                <button type="submit">Join</button>
+            </form>
         </div>
     </div>
 </body>

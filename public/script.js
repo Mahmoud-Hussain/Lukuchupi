@@ -1,17 +1,14 @@
 const socket = io('/');
 const videoGrid = document.getElementById('video-grid');
-const myPeer = new RTCPeerConnection(); // Utilizing WebRTC directly might be complex without a library like PeerJS, but let's stick to the plan or simplify. 
-// Given the constraints and the user request, implementing raw WebRTC with socket.io for signaling is feasible but verbose. 
-// To make it simpler and more robust, normally PeerJS is used, but I didn't install it. 
-// I will simulate the PeerJS behavior or implement a simple simplified WebRTC signaling.
+const messagesContainer = document.getElementById('messages-container');
+const messageForm = document.getElementById('message-form');
+const messageInput = document.getElementById('message-input');
+const usernameModal = document.getElementById('username-modal');
+const usernameForm = document.getElementById('username-form');
+const usernameInput = document.getElementById('username-input');
+const joinBtn = document.getElementById('join-btn');
 
-// Actually, for a quick functional implementation, PeerJS is highly recommended to abstract the signaling complexity.
-// However, since I didn't add it to the plan, I will implement a basic WebRTC signaling mechanism using Socket.io.
-
-const myVideo = document.createElement('video');
-myVideo.muted = true;
-const peers = {};
-
+// WebRTC Configuration
 const iceServers = {
     iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
@@ -19,22 +16,107 @@ const iceServers = {
     ],
 };
 
+const myPeer = new RTCPeerConnection(iceServers); // Init with config
+const peers = {};
 let myStream;
-
-const joinBtn = document.getElementById('join-btn');
+let myUserId;
+let myUsername;
 let isConnected = false;
+let isMuted = false;
+let isDeafened = false;
 
+// 1. Handle Username Submission
+usernameForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const username = usernameInput.value.trim();
+    if (username) {
+        myUsername = username;
+        usernameModal.classList.add('hidden');
+
+        // Generate ID
+        myUserId = 'user-' + Math.floor(Math.random() * 100000);
+
+        // Join Text Chat immediately
+        socket.emit('join-chat', { username: myUsername, userId: myUserId });
+    }
+});
+
+// 2. Chat Logic
+messageForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const message = messageInput.value.trim();
+    if (message && myUsername) {
+        socket.emit('send-message', {
+            username: myUsername,
+            message: message,
+            roomId: 'general'
+        });
+        messageInput.value = '';
+    }
+});
+
+socket.on('chat-message', (data) => {
+    appendMessage(data);
+});
+
+socket.on('chat-history', (messages) => {
+    messagesContainer.innerHTML = ''; // Clear placeholders
+    messages.forEach(msg => appendMessage(msg));
+    scrollToBottom();
+});
+
+function appendMessage(data) {
+    const messageElement = document.createElement('div');
+    messageElement.classList.add('message');
+
+    const date = new Date(data.timestamp || Date.now());
+    const timeString = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    messageElement.innerHTML = `
+        <div class="message-header">
+            <span class="message-username">${data.username}</span>
+            <span class="message-timestamp">${timeString}</span>
+        </div>
+        <div class="message-content">${escapeHtml(data.message)}</div>
+    `;
+
+    messagesContainer.appendChild(messageElement);
+    scrollToBottom();
+}
+
+function scrollToBottom() {
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+function escapeHtml(text) {
+    if (!text) return text;
+    return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}
+
+// 3. Voice Logic (Click to Join)
 joinBtn.addEventListener('click', () => {
     if (isConnected) return;
+    if (!myUsername) {
+        // Show modal if not set
+        usernameModal.classList.remove('hidden');
+        return;
+    }
+
     isConnected = true;
-    joinBtn.classList.add('connected'); // Add a class for visual feedback
+    joinBtn.classList.add('connected');
+    const channelName = joinBtn.querySelector('.channel-icon').nextSibling;
+    if (channelName) channelName.textContent = ' General (Connected)';
 
     navigator.mediaDevices.getUserMedia({
         video: false,
         audio: true
     }).then(stream => {
         myStream = stream;
-        addVideoStream(myVideo, stream);
+
+        // Mute/Deafen State check
+        myStream.getAudioTracks()[0].enabled = !isMuted;
+
+        addVideoStream(createMyVideoElement(), stream);
 
         socket.on('user-connected', userId => {
             connectToNewUser(userId, stream);
@@ -49,27 +131,31 @@ joinBtn.addEventListener('click', () => {
                 peers[userId].close();
                 delete peers[userId];
             }
-            // Remove video element if exists (need to track them)
             const video = document.getElementById(userId);
             if (video) video.remove();
         });
 
-        const myUserId = 'user-' + Math.floor(Math.random() * 10000);
+        // Join Voice Room
         socket.emit('join-room', 'general', myUserId);
 
-        // precise UI update to show joined status
-        const channelName = joinBtn.querySelector('.channel-icon').nextSibling;
-        if (channelName) channelName.textContent = ' General (Connected)';
     }).catch(error => {
         console.error('Error accessing media devices:', error);
-        isConnected = false; // Reset if failed
+        isConnected = false;
+        joinBtn.classList.remove('connected');
+        if (channelName) channelName.textContent = ' General';
+        alert("Could not access microphone.");
     });
 });
+
+function createMyVideoElement() {
+    const video = document.createElement('video');
+    video.muted = true; // Always mute self
+    return video;
+}
 
 function connectToNewUser(userId, stream) {
     const peer = createPeerConnection(userId);
     stream.getTracks().forEach(track => peer.addTrack(track, stream));
-
     peers[userId] = peer;
 
     peer.createOffer().then(offer => {
@@ -82,7 +168,9 @@ function handleOffer(payload) {
     const peer = createPeerConnection(payload.caller);
     peers[payload.caller] = peer;
 
-    myStream.getTracks().forEach(track => peer.addTrack(track, myStream));
+    if (myStream) {
+        myStream.getTracks().forEach(track => peer.addTrack(track, myStream));
+    }
 
     peer.setRemoteDescription(payload.sdp).then(() => {
         return peer.createAnswer();
@@ -134,24 +222,28 @@ function addVideoStream(video, stream) {
 
 // Controls
 const muteBtn = document.getElementById('mic-btn');
-let isMuted = false;
 
 muteBtn.addEventListener('click', () => {
     isMuted = !isMuted;
     if (myStream) {
         myStream.getAudioTracks()[0].enabled = !isMuted;
-        muteBtn.innerHTML = isMuted ? '🔇' : '🎤';
-        muteBtn.classList.toggle('muted', isMuted);
     }
+    muteBtn.innerHTML = isMuted ? '🔇' : '🎤';
+    muteBtn.classList.toggle('muted', isMuted);
 });
 
 const deafenBtn = document.getElementById('deafen-btn');
-let isDeafened = false;
 
 deafenBtn.addEventListener('click', () => {
     isDeafened = !isDeafened;
-    // Implementation for deafening (muting all incoming audio)
-    // This would involve muting the audio elements of peers.
+    // For a real deafen, we'd mute all incoming audio elements.
+    // Since we append videos to videoGrid, we can iterate them.
+    const videos = videoGrid.querySelectorAll('video');
+    videos.forEach(v => {
+        if (v !== myVideo) v.muted = isDeafened; // Mute others
+        // Note: myVideo is always muted.
+    });
+
     deafenBtn.innerHTML = isDeafened ? '🔇' : '🎧';
     deafenBtn.classList.toggle('deafened', isDeafened);
 });
