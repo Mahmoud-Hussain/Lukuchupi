@@ -413,3 +413,109 @@ body {
     overflow: hidden;
     visibility: hidden;
 }
+
+/* Voice User List (Sidebar) */
+.voice-user-list {
+    margin-left: 20px;
+    margin-top: 5px;
+    display: flex;
+    flex-direction: column;
+}
+
+.voice-user {
+    display: flex;
+    align-items: center;
+    padding: 6px 8px;
+    border-radius: 4px;
+    margin-bottom: 2px;
+    cursor: default;
+}
+
+.voice-user:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.voice-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: bold;
+    margin-right: 8px;
+    border: 1px solid var(--glass-border);
+}
+
+.voice-username {
+    font-size: 14px;
+    color: var(--text-normal);
+}
+
+/* Settings Modal */
+.settings-content {
+    text-align: left;
+    min-width: 400px;
+}
+
+.setting-group {
+    margin-bottom: 20px;
+}
+
+.setting-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--text-secondary);
+    font-size: 14px;
+    text-transform: uppercase;
+    font-weight: bold;
+}
+
+.setting-group select {
+    width: 100%;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--glass-border);
+    border-radius: 4px;
+    color: var(--text-primary);
+    outline: none;
+}
+
+.setting-group select:focus {
+    border-color: var(--neon-blue);
+}
+
+.mic-test-container {
+    width: 100%;
+    height: 10px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 5px;
+    overflow: hidden;
+    margin-top: 10px;
+}
+
+.mic-bar {
+    width: 0%;
+    height: 100%;
+    background: linear-gradient(90deg, var(--neon-green), var(--neon-blue));
+    transition: width 0.1s ease;
+}
+
+.small-text {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 5px;
+}
+
+#close-settings-btn {
+    margin-top: 10px;
+    background: transparent;
+    border: 1px solid var(--glass-border);
+}
+
+#close-settings-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: none;
+}

@@ -27,17 +27,35 @@ app.get('/', (req, res) => {
     res.sendFile(__dirname + '/public/index.html');
 });
 
+// Track users in rooms: { roomId: [ {userId, username}, ... ] }
+const roomUsers = {};
+
 io.on('connection', socket => {
     console.log('User connected', socket.id);
 
     // VOICE: Join Room
-    socket.on('join-room', (roomId, userId) => {
-        console.log(`User ${userId} joined room ${roomId}`);
+    socket.on('join-room', (roomId, userId, username) => {
+        console.log(`User ${username} (${userId}) joined room ${roomId}`);
         socket.join(roomId);
-        socket.to(roomId).emit('user-connected', userId);
+
+        // Add to tracking
+        if (!roomUsers[roomId]) roomUsers[roomId] = [];
+        roomUsers[roomId].push({ userId, username });
+
+        // Broadcast to others
+        socket.to(roomId).emit('user-connected', { userId, username });
+
+        // Send existing users to the new joiner
+        socket.emit('room-users', roomUsers[roomId]);
 
         socket.on('disconnect', () => {
-            console.log(`User ${userId} disconnected`);
+            console.log(`User ${username} (${userId}) disconnected`);
+
+            // Remove from tracking
+            if (roomUsers[roomId]) {
+                roomUsers[roomId] = roomUsers[roomId].filter(u => u.userId !== userId);
+            }
+
             socket.to(roomId).emit('user-disconnected', userId);
         });
 

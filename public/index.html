@@ -26,6 +26,10 @@
                     <div class="channel active" id="join-btn">
                         <span class="channel-icon">🔊</span> General
                     </div>
+                    <!-- Connected Users List -->
+                    <div id="voice-user-list" class="voice-user-list">
+                        <!-- User items injected here -->
+                    </div>
                 </div>
             </div>
             <div class="user-controls">
@@ -74,6 +78,28 @@
                 <input type="text" id="username-input" placeholder="Username" required autocomplete="off">
                 <button type="submit">Join</button>
             </form>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal-overlay hidden">
+        <div class="modal-content settings-content">
+            <h2>Audio Settings</h2>
+            
+            <div class="setting-group">
+                <label for="mic-select">Microphone Input</label>
+                <select id="mic-select"></select>
+            </div>
+
+            <div class="setting-group">
+                <label>Test Microphone</label>
+                <div class="mic-test-container">
+                    <div id="mic-bar" class="mic-bar"></div>
+                </div>
+                <p class="small-text">Speak to test your input level</p>
+            </div>
+
+            <button id="close-settings-btn">Close</button>
         </div>
     </div>
 </body>
