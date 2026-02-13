@@ -204,20 +204,21 @@ function createPeerConnection(targetUserId) {
     };
 
     peer.ontrack = event => {
-        const video = document.createElement('video');
-        video.id = targetUserId;
-        addVideoStream(video, event.streams[0]);
+        const audio = document.createElement('audio'); // Audio element
+        audio.id = targetUserId;
+        audio.autoplay = true; // Essential for auto-playing audio
+        addVideoStream(audio, event.streams[0]);
     };
 
     return peer;
 }
 
-function addVideoStream(video, stream) {
-    video.srcObject = stream;
-    video.addEventListener('loadedmetadata', () => {
-        video.play();
+function addVideoStream(element, stream) {
+    element.srcObject = stream;
+    element.addEventListener('loadedmetadata', () => {
+        element.play().catch(e => console.log("Play error:", e));
     });
-    videoGrid.append(video);
+    videoGrid.append(element);
 }
 
 // Controls
@@ -238,7 +239,7 @@ deafenBtn.addEventListener('click', () => {
     isDeafened = !isDeafened;
     // For a real deafen, we'd mute all incoming audio elements.
     // Since we append videos to videoGrid, we can iterate them.
-    const videos = videoGrid.querySelectorAll('video');
+    const videos = videoGrid.querySelectorAll('audio');
     videos.forEach(v => {
         if (v !== myVideo) v.muted = isDeafened; // Mute others
         // Note: myVideo is always muted.
