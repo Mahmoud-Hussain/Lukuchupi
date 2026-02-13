@@ -71,6 +71,16 @@ io.on('connection', socket => {
         socket.on('ice-candidate', (payload) => {
             io.to(payload.target).emit('ice-candidate', payload);
         });
+
+        // Toggle: Leave Room
+        socket.on('leave-room', (rId, uId) => {
+            console.log(`User ${username} (${userId}) left room ${roomId}`);
+            socket.leave(roomId);
+            if (roomUsers[roomId]) {
+                roomUsers[roomId] = roomUsers[roomId].filter(u => u.userId !== userId);
+            }
+            socket.to(roomId).emit('user-disconnected', userId);
+        });
     });
 
     // CHAT: Join & History

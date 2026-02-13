@@ -447,6 +447,12 @@ body {
     font-weight: bold;
     margin-right: 8px;
     border: 1px solid var(--glass-border);
+    transition: box-shadow 0.1s;
+}
+
+.voice-avatar.speaking {
+    box-shadow: 0 0 0 2px #43b581, 0 0 8px #43b581;
+    border-color: #43b581;
 }
 
 .voice-username {

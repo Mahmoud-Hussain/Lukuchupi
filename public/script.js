@@ -37,6 +37,7 @@ let isDeafened = false;
 let audioContext;
 let analyser;
 let microphone;
+let vadIntervals = []; // Store interval IDs for VAD cleanup
 
 // 1. Handle Username Submission
 usernameForm.addEventListener('submit', (e) => {
@@ -112,21 +113,59 @@ function escapeHtml(text) {
     return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 }
 
-// 3. Voice Logic (Click to Join)
+// 3. Voice Logic (Toggle to Join/Leave)
 joinBtn.addEventListener('click', () => {
-    if (isConnected) return;
     if (!myUsername) {
         usernameModal.classList.remove('hidden');
         return;
     }
 
-    // Animation Start
-    joinBtn.classList.add('joining');
-
-    setTimeout(() => {
-        initializeVoiceConnection();
-    }, 600);
+    if (isConnected) {
+        leaveVoiceChannel();
+    } else {
+        // Animation Start
+        joinBtn.classList.add('joining');
+        setTimeout(() => {
+            initializeVoiceConnection();
+        }, 600);
+    }
 });
+
+function leaveVoiceChannel() {
+    if (!isConnected) return;
+
+    // Cleanup WebRTC
+    if (myStream) {
+        myStream.getTracks().forEach(track => track.stop());
+        myStream = null;
+    }
+
+    Object.keys(peers).forEach(key => {
+        peers[key].close();
+        delete peers[key];
+    });
+
+    // Backend Leave
+    socket.emit('leave-room', 'general', myUserId);
+
+    // Remove self from local list
+    removeUserFromVoiceList(myUserId);
+
+    // UI Reset
+    isConnected = false;
+    joinBtn.classList.remove('connected');
+    const channelName = joinBtn.querySelector('.channel-icon').nextSibling;
+    if (channelName) channelName.textContent = ' General';
+
+    // Cleanup VAD
+    if (vadIntervals) {
+        vadIntervals.forEach(clearInterval);
+        vadIntervals = [];
+    }
+
+    // Clear list
+    voiceUserList.innerHTML = '';
+}
 
 function initializeVoiceConnection(deviceId = null) {
     const constraints = {
@@ -180,6 +219,9 @@ function initializeVoiceConnection(deviceId = null) {
 
         // Setup Mic Test Visualizer if Settings Open
         setupMicVisualizer(stream);
+
+        // Start VAD for Self
+        setupVoiceActivityDetection(stream, myUserId);
 
     }).catch(error => {
         console.error('Error accessing media devices:', error);
@@ -304,6 +346,9 @@ function createPeerConnection(targetUserId) {
         audio.autoplay = true;
         audio.playsInline = true;
         addVideoStream(audio, event.streams[0]);
+
+        // Start VAD for Remote User
+        setupVoiceActivityDetection(event.streams[0], targetUserId);
     };
 
     return peer;
@@ -317,6 +362,41 @@ function addVideoStream(element, stream) {
         });
     });
     videoGrid.append(element);
+}
+
+// Voice Activity Detection (VAD)
+function setupVoiceActivityDetection(stream, userId) {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const source = audioCtx.createMediaStreamSource(stream);
+    const analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 256;
+    source.connect(analyser);
+
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+
+    const checkSpeaking = () => {
+        // Check if user still exists in list, else stop
+        const userEl = document.getElementById(`voice-user-${userId}`);
+        if (!userEl) return;
+
+        analyser.getByteFrequencyData(dataArray);
+        let sum = 0;
+        for (let i = 0; i < bufferLength; i++) {
+            sum += dataArray[i];
+        }
+        const average = sum / bufferLength;
+
+        const avatar = userEl.querySelector('.voice-avatar');
+        if (average > 10) { // Threshold for "speaking"
+            avatar.classList.add('speaking');
+        } else {
+            avatar.classList.remove('speaking');
+        }
+    };
+
+    const intervalId = setInterval(checkSpeaking, 100);
+    vadIntervals.push(intervalId);
 }
 
 // Controls
