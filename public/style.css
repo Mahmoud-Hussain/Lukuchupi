@@ -1,0 +1,238 @@
+:root {
+    --bg-tertiary: #202225;
+    --bg-secondary: #2f3136;
+    --bg-primary: #36393f;
+    --channel-hover: #34373c;
+    --channel-active: #393c43;
+    --text-normal: #dcddde;
+    --text-muted: #72767d;
+    --header-primary: #fff;
+    --interactive-normal: #b9bbbe;
+    --interactive-hover: #dcddde;
+    --interactive-active: #fff;
+    --brand-color: #5865F2;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Roboto', sans-serif;
+    color: var(--text-normal);
+    background-color: var(--bg-primary);
+    overflow: hidden;
+    height: 100vh;
+}
+
+.app-container {
+    display: flex;
+    height: 100vh;
+}
+
+/* Server Sidebar */
+.servers-sidebar {
+    width: 72px;
+    background-color: var(--bg-tertiary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 12px;
+    overflow-y: auto;
+}
+
+.server-icon {
+    width: 48px;
+    height: 48px;
+    background-color: var(--bg-primary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: var(--text-normal);
+}
+
+.server-icon:hover {
+    border-radius: 16px;
+    background-color: var(--brand-color);
+    color: #fff;
+}
+
+.server-icon.active {
+    border-radius: 16px;
+    background-color: var(--brand-color);
+    color: #fff;
+}
+
+/* Channels Sidebar */
+.channels-sidebar {
+    width: 240px;
+    background-color: var(--bg-secondary);
+    display: flex;
+    flex-direction: column;
+}
+
+.server-header {
+    height: 48px;
+    padding: 12px 16px;
+    font-weight: bold;
+    box-shadow: 0 1px 0 rgba(4, 4, 5, 0.2);
+    color: var(--header-primary);
+    display: flex;
+    align-items: center;
+}
+
+.channels-list {
+    flex: 1;
+    padding: 8px;
+    overflow-y: auto;
+}
+
+.group-header {
+    padding: 8px;
+    font-size: 12px;
+    font-weight: bold;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+
+.channel {
+    padding: 6px 8px;
+    margin: 2px 0;
+    border-radius: 4px;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+
+.channel:hover {
+    background-color: var(--channel-hover);
+    color: var(--interactive-hover);
+}
+
+.channel.active {
+    background-color: var(--channel-active);
+    color: var(--interactive-active);
+}
+
+.channel.connected {
+    color: #43b581;
+    /* Discord green for voice connected */
+    font-weight: bold;
+}
+
+.channel-icon {
+    margin-right: 6px;
+}
+
+/* User Controls */
+.user-controls {
+    background-color: #292b2f;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+}
+
+.avatar {
+    width: 32px;
+    height: 32px;
+    background-color: red;
+    /* Placeholder color */
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    margin-right: 8px;
+    color: white;
+}
+
+.username {
+    font-weight: bold;
+    font-size: 14px;
+    color: var(--header-primary);
+}
+
+.controls-icons {
+    display: flex;
+}
+
+.control-btn {
+    background: none;
+    border: none;
+    color: var(--interactive-normal);
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+.control-btn:hover {
+    background-color: var(--bg-primary);
+    color: var(--interactive-hover);
+}
+
+/* Main Chat Area */
+.main-chat-area {
+    flex: 1;
+    background-color: var(--bg-primary);
+    display: flex;
+    flex-direction: column;
+}
+
+.chat-header {
+    height: 48px;
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 1px 0 rgba(4, 4, 5, 0.2);
+    font-weight: bold;
+    color: var(--header-primary);
+}
+
+.chat-content {
+    flex: 1;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.welcome-message h1 {
+    font-size: 32px;
+    color: var(--header-primary);
+    margin-bottom: 8px;
+}
+
+.welcome-message p {
+    color: var(--text-muted);
+}
+
+#video-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+video {
+    width: 0;
+    /* Hide video element */
+    height: 0;
+    /* Hide video element */
+}

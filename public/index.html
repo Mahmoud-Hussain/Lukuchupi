@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lukuchupi</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="/socket.io/socket.io.js" defer></script>
+    <script src="script.js" defer></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script> <!-- Placeholder for icons -->
+</head>
+<body>
+    <div class="app-container">
+        <!-- Server List Sidebar -->
+        <div class="servers-sidebar">
+            <div class="server-icon active" title="Lukuchupi Server">L</div>
+        </div>
+
+        <!-- Channels Sidebar -->
+        <div class="channels-sidebar">
+            <div class="server-header">Lukuchupi</div>
+            <div class="channels-list">
+                <div class="channel-group">
+                    <div class="group-header">VOICE CHANNELS</div>
+                    <div class="channel active" id="join-btn">
+                        <span class="channel-icon">🔊</span> General
+                    </div>
+                </div>
+            </div>
+            <div class="user-controls">
+                <div class="user-info">
+                    <div class="avatar">U</div>
+                    <div class="username">User</div>
+                </div>
+                <div class="controls-icons">
+                    <button id="mic-btn" class="control-btn" title="Mute Microphone">🎤</button>
+                    <button id="deafen-btn" class="control-btn" title="Deafen">🎧</button>
+                    <button id="settings-btn" class="control-btn" title="Settings">⚙️</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Chat Area -->
+        <div class="main-chat-area">
+            <div class="chat-header">
+                <span class="channel-icon">🔊</span> General
+            </div>
+            <div class="chat-content">
+                <div class="welcome-message">
+                    <h1>Welcome to #General</h1>
+                    <p>This is the start of the Lukuchupi voice channel.</p>
+                </div>
+                <div id="video-grid"></div> <!-- Hidden video elements for audio functionality -->
+            </div>
+        </div>
+    </div>
+</body>
+</html>
