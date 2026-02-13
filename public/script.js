@@ -16,8 +16,10 @@ const iceServers = {
     ],
 };
 
-const myPeer = new RTCPeerConnection(iceServers); // Init with config
+const myPeer = new RTCPeerConnection(iceServers);
 const peers = {};
+const iceCandidateQueue = {}; // Queue for early candidates
+
 let myStream;
 let myUserId;
 let myUsername;
@@ -32,6 +34,12 @@ usernameForm.addEventListener('submit', (e) => {
     if (username) {
         myUsername = username;
         usernameModal.classList.add('hidden');
+
+        // Update User Interface (Sidebar)
+        const sidebarUsername = document.querySelector('.user-info .username');
+        const sidebarAvatar = document.querySelector('.user-info .avatar');
+        if (sidebarUsername) sidebarUsername.textContent = myUsername;
+        if (sidebarAvatar) sidebarAvatar.textContent = myUsername.charAt(0).toUpperCase();
 
         // Generate ID
         myUserId = 'user-' + Math.floor(Math.random() * 100000);
@@ -60,7 +68,7 @@ socket.on('chat-message', (data) => {
 });
 
 socket.on('chat-history', (messages) => {
-    messagesContainer.innerHTML = ''; // Clear placeholders
+    messagesContainer.innerHTML = '';
     messages.forEach(msg => appendMessage(msg));
     scrollToBottom();
 });
@@ -97,28 +105,36 @@ function escapeHtml(text) {
 joinBtn.addEventListener('click', () => {
     if (isConnected) return;
     if (!myUsername) {
-        // Show modal if not set
         usernameModal.classList.remove('hidden');
         return;
     }
 
-    isConnected = true;
-    joinBtn.classList.add('connected');
-    const channelName = joinBtn.querySelector('.channel-icon').nextSibling;
-    if (channelName) channelName.textContent = ' General (Connected)';
+    // Animation Start
+    joinBtn.classList.add('joining');
 
+    setTimeout(() => {
+        initializeVoiceConnection();
+    }, 600);
+});
+
+function initializeVoiceConnection() {
     navigator.mediaDevices.getUserMedia({
         video: false,
         audio: true
     }).then(stream => {
         myStream = stream;
 
-        // Mute/Deafen State check
-        myStream.getAudioTracks()[0].enabled = !isMuted;
+        if (myStream.getAudioTracks().length > 0) {
+            myStream.getAudioTracks()[0].enabled = !isMuted;
+        }
 
-        addVideoStream(createMyVideoElement(), stream);
+        // Add my own stream (muted)
+        // Note: For audio-only, we don't strictly *need* to append our own stream to the DOM unless we want to monitor levels visually later.
+        // But let's keep it consistent with the logic.
+        // addVideoStream(createMyVideoElement(), stream); 
 
         socket.on('user-connected', userId => {
+            console.log("User connected: " + userId);
             connectToNewUser(userId, stream);
         });
 
@@ -131,25 +147,30 @@ joinBtn.addEventListener('click', () => {
                 peers[userId].close();
                 delete peers[userId];
             }
-            const video = document.getElementById(userId);
-            if (video) video.remove();
+            const audio = document.getElementById(userId);
+            if (audio) audio.remove();
         });
 
-        // Join Voice Room
         socket.emit('join-room', 'general', myUserId);
+
+        // Success
+        isConnected = true;
+        joinBtn.classList.remove('joining');
+        joinBtn.classList.add('connected');
+        const channelName = joinBtn.querySelector('.channel-icon').nextSibling;
+        if (channelName) channelName.textContent = ' General (Connected)';
 
     }).catch(error => {
         console.error('Error accessing media devices:', error);
         isConnected = false;
-        joinBtn.classList.remove('connected');
-        if (channelName) channelName.textContent = ' General';
-        alert("Could not access microphone.");
+        joinBtn.classList.remove('joining');
+        alert("Could not access microphone. Ensure permissions are granted.");
     });
-});
+}
 
 function createMyVideoElement() {
-    const video = document.createElement('video');
-    video.muted = true; // Always mute self
+    const video = document.createElement('audio');
+    video.muted = true;
     return video;
 }
 
@@ -157,6 +178,9 @@ function connectToNewUser(userId, stream) {
     const peer = createPeerConnection(userId);
     stream.getTracks().forEach(track => peer.addTrack(track, stream));
     peers[userId] = peer;
+
+    // Init candidate queue for this user
+    iceCandidateQueue[userId] = [];
 
     peer.createOffer().then(offer => {
         peer.setLocalDescription(offer);
@@ -168,11 +192,24 @@ function handleOffer(payload) {
     const peer = createPeerConnection(payload.caller);
     peers[payload.caller] = peer;
 
+    // Init candidate queue
+    if (!iceCandidateQueue[payload.caller]) {
+        iceCandidateQueue[payload.caller] = [];
+    }
+
     if (myStream) {
         myStream.getTracks().forEach(track => peer.addTrack(track, myStream));
     }
 
     peer.setRemoteDescription(payload.sdp).then(() => {
+        // Apply buffered candidates
+        const queue = iceCandidateQueue[payload.caller];
+        if (queue) {
+            queue.forEach(candidate => {
+                peer.addIceCandidate(new RTCIceCandidate(candidate)).catch(e => console.log("Buffered Candidate Error:", e));
+            });
+            delete iceCandidateQueue[payload.caller];
+        }
         return peer.createAnswer();
     }).then(answer => {
         peer.setLocalDescription(answer);
@@ -183,14 +220,31 @@ function handleOffer(payload) {
 function handleAnswer(payload) {
     const peer = peers[payload.caller];
     if (peer) {
-        peer.setRemoteDescription(payload.sdp);
+        peer.setRemoteDescription(payload.sdp).then(() => {
+            // Apply buffered candidates
+            const queue = iceCandidateQueue[payload.caller];
+            if (queue) {
+                queue.forEach(candidate => {
+                    peer.addIceCandidate(new RTCIceCandidate(candidate)).catch(e => console.log("Buffered Candidate Error:", e));
+                });
+                delete iceCandidateQueue[payload.caller];
+            }
+        });
     }
 }
 
 function handleIceCandidate(payload) {
     const peer = peers[payload.caller];
     if (peer) {
-        peer.addIceCandidate(new RTCIceCandidate(payload.candidate));
+        if (peer.remoteDescription) {
+            peer.addIceCandidate(new RTCIceCandidate(payload.candidate)).catch(e => console.log("Candidate Error:", e));
+        } else {
+            // Buffer it
+            if (!iceCandidateQueue[payload.caller]) {
+                iceCandidateQueue[payload.caller] = [];
+            }
+            iceCandidateQueue[payload.caller].push(payload.candidate);
+        }
     }
 }
 
@@ -203,10 +257,16 @@ function createPeerConnection(targetUserId) {
         }
     };
 
+    peer.onconnectionstatechange = () => {
+        console.log(`Connection state with ${targetUserId}: ${peer.connectionState}`);
+    };
+
     peer.ontrack = event => {
-        const audio = document.createElement('audio'); // Audio element
+        console.log("Receive Track from: " + targetUserId);
+        const audio = document.createElement('audio');
         audio.id = targetUserId;
-        audio.autoplay = true; // Essential for auto-playing audio
+        audio.autoplay = true;
+        audio.playsInline = true; // Important for iOS
         addVideoStream(audio, event.streams[0]);
     };
 
@@ -216,7 +276,9 @@ function createPeerConnection(targetUserId) {
 function addVideoStream(element, stream) {
     element.srcObject = stream;
     element.addEventListener('loadedmetadata', () => {
-        element.play().catch(e => console.log("Play error:", e));
+        element.play().catch(e => {
+            console.log("Auto-play prevented. User interaction needed.", e);
+        });
     });
     videoGrid.append(element);
 }
@@ -237,12 +299,9 @@ const deafenBtn = document.getElementById('deafen-btn');
 
 deafenBtn.addEventListener('click', () => {
     isDeafened = !isDeafened;
-    // For a real deafen, we'd mute all incoming audio elements.
-    // Since we append videos to videoGrid, we can iterate them.
-    const videos = videoGrid.querySelectorAll('audio');
-    videos.forEach(v => {
-        if (v !== myVideo) v.muted = isDeafened; // Mute others
-        // Note: myVideo is always muted.
+    const audios = videoGrid.querySelectorAll('audio');
+    audios.forEach(a => {
+        a.muted = isDeafened;
     });
 
     deafenBtn.innerHTML = isDeafened ? '🔇' : '🎧';
