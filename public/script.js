@@ -522,7 +522,7 @@ function setupMicVisualizer(stream) {
     const dataArray = new Uint8Array(bufferLength);
 
     function draw() {
-        if (settingsModal.classList.contains('hidden')) return;
+        if (settingsModal.classList.contains('hidden') || !isConnected) return;
         requestAnimationFrame(draw);
         analyser.getByteFrequencyData(dataArray);
 
@@ -536,4 +536,23 @@ function setupMicVisualizer(stream) {
         micBar.style.width = Math.min(width, 100) + '%';
     }
     draw();
+}
+
+// Mobile Menu Toggle
+const menuToggle = document.getElementById('menu-toggle');
+const channelsSidebar = document.querySelector('.channels-sidebar');
+
+if (menuToggle) {
+    menuToggle.addEventListener('click', () => {
+        channelsSidebar.classList.toggle('open');
+    });
+
+    // Close sidebar when clicking outside on mobile
+    document.addEventListener('click', (e) => {
+        if (window.innerWidth <= 768) {
+            if (!channelsSidebar.contains(e.target) && !menuToggle.contains(e.target) && channelsSidebar.classList.contains('open')) {
+                channelsSidebar.classList.remove('open');
+            }
+        }
+    });
 }

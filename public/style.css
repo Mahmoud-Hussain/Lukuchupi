@@ -1,12 +1,16 @@
 :root {
-    --bg-primary: #0a0b1e;
-    --bg-secondary: rgba(255, 255, 255, 0.05);
-    --glass-border: rgba(255, 255, 255, 0.1);
+    --bg-primary: #050a05;
+    --bg-secondary: rgba(0, 255, 0, 0.05);
+    /* Green tint */
+    --glass-border: rgba(57, 255, 20, 0.2);
+    /* Neon Green border */
+    --neon-main: #39ff14;
+    /* Neon Green */
+    --neon-glow: #0aff0a;
     --neon-blue: #00f3ff;
-    --neon-purple: #bc13fe;
-    --neon-green: #0aff0a;
-    --text-primary: #ffffff;
-    --text-secondary: #a0a0b0;
+    /* Keep for accent */
+    --text-primary: #e0ffe0;
+    --text-secondary: #a0c0a0;
     --font-family: 'Roboto', sans-serif;
 }
 
@@ -21,8 +25,8 @@ body {
     color: var(--text-primary);
     background-color: var(--bg-primary);
     background-image:
-        radial-gradient(circle at 10% 20%, rgba(188, 19, 254, 0.2) 0%, transparent 40%),
-        radial-gradient(circle at 90% 80%, rgba(0, 243, 255, 0.2) 0%, transparent 40%);
+        radial-gradient(circle at 10% 20%, rgba(57, 255, 20, 0.15) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(0, 243, 255, 0.1) 0%, transparent 40%);
     overflow: hidden;
     height: 100vh;
 }
@@ -30,16 +34,16 @@ body {
 .app-container {
     display: flex;
     height: 100vh;
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(5px);
 }
 
 /* Glassmorphism Utilities */
 .glass-panel {
-    background: var(--bg-secondary);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: rgba(10, 20, 10, 0.4);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border: 1px solid var(--glass-border);
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 30px rgba(0, 255, 0, 0.1);
 }
 
 /* Sidebar */
@@ -50,28 +54,35 @@ body {
     flex-direction: column;
     align-items: center;
     border-right: 1px solid var(--glass-border);
-    background: rgba(10, 11, 30, 0.6);
+    background: rgba(5, 15, 5, 0.6);
+    backdrop-filter: blur(10px);
 }
 
 .server-icon {
     width: 50px;
     height: 50px;
     border-radius: 50%;
-    background: linear-gradient(135deg, var(--neon-purple), var(--neon-blue));
+    background: rgba(0, 0, 0, 0.5);
+    border: 2px solid var(--neon-main);
+    color: var(--neon-main);
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: bold;
     font-size: 20px;
-    box-shadow: 0 0 10px var(--neon-purple);
-    /* Neon Glow */
+    box-shadow: 0 0 10px var(--neon-main);
     cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s;
+    transition: all 0.3s ease;
+    text-shadow: 0 0 5px var(--neon-main);
 }
 
-.server-icon:hover {
+.server-icon:hover,
+.server-icon.active {
     transform: scale(1.1);
-    box-shadow: 0 0 20px var(--neon-blue);
+    background: var(--neon-main);
+    color: #000;
+    box-shadow: 0 0 25px var(--neon-main);
+    text-shadow: none;
 }
 
 /* Channels Sidebar */
@@ -80,7 +91,8 @@ body {
     display: flex;
     flex-direction: column;
     border-right: 1px solid var(--glass-border);
-    background: rgba(10, 11, 30, 0.4);
+    background: rgba(5, 20, 5, 0.4);
+    backdrop-filter: blur(12px);
 }
 
 .server-header {
@@ -90,11 +102,13 @@ body {
     font-weight: bold;
     text-transform: uppercase;
     letter-spacing: 1px;
-    color: var(--neon-blue);
-    text-shadow: 0 0 5px rgba(0, 243, 255, 0.5);
+    color: var(--neon-main);
+    text-shadow: 0 0 8px var(--neon-main);
     border-bottom: 1px solid var(--glass-border);
     display: flex;
     align-items: center;
+    justify-content: space-between;
+    /* Adjusted for mobile menu toggle if needed */
 }
 
 .channels-list {
@@ -103,53 +117,59 @@ body {
 }
 
 .group-header {
-    font-size: 12px;
+    font-size: 11px;
     color: var(--text-secondary);
     margin-bottom: 10px;
     text-transform: uppercase;
     letter-spacing: 1px;
+    font-weight: bold;
 }
 
 .channel {
     padding: 10px 15px;
-    border-radius: 8px;
+    border-radius: 6px;
     color: var(--text-secondary);
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
     display: flex;
     align-items: center;
     margin-bottom: 5px;
+    border: 1px solid transparent;
 }
 
 .channel:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: var(--text-primary);
+    background: rgba(57, 255, 20, 0.1);
+    color: var(--neon-main);
+    border-color: rgba(57, 255, 20, 0.3);
+    box-shadow: 0 0 10px rgba(57, 255, 20, 0.1) inset;
 }
 
 /* Join Animation Helper Class */
 .channel.joining {
-    animation: pulse-green 1s infinite;
+    animation: pulse-neon 1s infinite;
 }
 
-@keyframes pulse-green {
+@keyframes pulse-neon {
     0% {
-        box-shadow: 0 0 0 0 rgba(10, 255, 10, 0.4);
+        box-shadow: 0 0 0 0 rgba(57, 255, 20, 0.4);
     }
 
     70% {
-        box-shadow: 0 0 0 10px rgba(10, 255, 10, 0);
+        box-shadow: 0 0 0 10px rgba(57, 255, 20, 0);
     }
 
     100% {
-        box-shadow: 0 0 0 0 rgba(10, 255, 10, 0);
+        box-shadow: 0 0 0 0 rgba(57, 255, 20, 0);
     }
 }
 
 .channel.connected {
-    color: var(--neon-green);
-    background: rgba(10, 255, 10, 0.1);
-    border: 1px solid rgba(10, 255, 10, 0.3);
-    text-shadow: 0 0 5px var(--neon-green);
+    color: #000;
+    background: var(--neon-main);
+    border: 1px solid var(--neon-main);
+    text-shadow: none;
+    font-weight: bold;
+    box-shadow: 0 0 15px var(--neon-main);
 }
 
 .channel-icon {
@@ -171,12 +191,14 @@ body {
     padding: 0 20px;
     display: flex;
     align-items: center;
-    border-bottom: 1px solid var(--glass-border);
+    border-bottom: 2px solid var(--glass-border);
     font-size: 18px;
     font-weight: bold;
     color: var(--text-primary);
-    background: rgba(10, 11, 30, 0.4);
+    background: rgba(5, 15, 5, 0.4);
     flex-shrink: 0;
+    backdrop-filter: blur(5px);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 
 .chat-content {
@@ -197,13 +219,20 @@ body {
 
 .message {
     margin-bottom: 15px;
-    padding: 10px 15px;
+    padding: 12px 18px;
     border-radius: 12px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(10, 30, 10, 0.6);
+    border: 1px solid rgba(57, 255, 20, 0.1);
     max-width: 80%;
     align-self: flex-start;
     animation: fadeIn 0.3s ease-in-out;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(4px);
+}
+
+.message:hover {
+    border-color: rgba(57, 255, 20, 0.3);
+    box-shadow: 0 0 10px rgba(57, 255, 20, 0.05);
 }
 
 @keyframes fadeIn {
@@ -222,14 +251,14 @@ body {
     font-size: 0.8rem;
     margin-bottom: 4px;
     display: flex;
-    /* justify-content: space-between; */
     align-items: center;
 }
 
 .message-username {
-    color: var(--neon-blue);
+    color: var(--neon-main);
     font-weight: bold;
     margin-right: 10px;
+    text-shadow: 0 0 2px rgba(57, 255, 20, 0.5);
 }
 
 .message-timestamp {
@@ -239,30 +268,32 @@ body {
 
 .message-content {
     line-height: 1.5;
+    color: var(--text-primary);
 }
 
 /* Input Area */
 .message-input-area {
     padding: 20px;
-    background: rgba(10, 11, 30, 0.8);
+    background: rgba(5, 15, 5, 0.8);
     border-top: 1px solid var(--glass-border);
     flex-shrink: 0;
+    backdrop-filter: blur(10px);
 }
 
 #message-form {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(0, 20, 0, 0.3);
     border: 1px solid var(--glass-border);
     border-radius: 25px;
-    /* Pill shape */
     padding: 5px 20px;
     display: flex;
     align-items: center;
-    transition: border-color 0.3s, box-shadow 0.3s;
+    transition: all 0.3s;
 }
 
 #message-form:focus-within {
-    border-color: var(--neon-purple);
-    box-shadow: 0 0 10px rgba(188, 19, 254, 0.3);
+    border-color: var(--neon-main);
+    background: rgba(0, 20, 0, 0.5);
+    box-shadow: 0 0 15px rgba(57, 255, 20, 0.2);
 }
 
 #message-input {
@@ -275,6 +306,10 @@ body {
     font-size: 1rem;
 }
 
+#message-input::placeholder {
+    color: rgba(160, 192, 160, 0.5);
+}
+
 /* Controls (User/Mic) */
 .user-controls {
     padding: 15px;
@@ -282,7 +317,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(0, 10, 0, 0.4);
 }
 
 .user-info {
@@ -294,18 +329,20 @@ body {
     width: 35px;
     height: 35px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #ff00cc, #333399);
+    background: linear-gradient(135deg, var(--neon-main), #004400);
     display: flex;
     align-items: center;
     justify-content: center;
     margin-right: 10px;
     font-weight: bold;
     border: 2px solid var(--glass-border);
+    color: #fff;
+    text-shadow: 0 0 3px #000;
 }
 
 .control-btn {
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
+    background: rgba(57, 255, 20, 0.05);
+    border: 1px solid transparent;
     color: var(--text-secondary);
     width: 35px;
     height: 35px;
@@ -319,15 +356,18 @@ body {
 }
 
 .control-btn:hover {
-    background: var(--neon-blue);
-    color: #000;
-    box-shadow: 0 0 10px var(--neon-blue);
+    background: rgba(57, 255, 20, 0.2);
+    color: var(--neon-main);
+    border-color: var(--neon-main);
+    box-shadow: 0 0 10px rgba(57, 255, 20, 0.3);
 }
 
 .control-btn.muted,
 .control-btn.deafened {
     color: #ff3333;
-    background: rgba(255, 0, 0, 0.1);
+    background: rgba(255, 0, 0, 0.15);
+    border-color: rgba(255, 0, 0, 0.3);
+    box-shadow: 0 0 10px rgba(255, 0, 0, 0.2);
 }
 
 /* Modal */
@@ -337,7 +377,7 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.8);
+    background: rgba(0, 5, 0, 0.85);
     backdrop-filter: blur(8px);
     display: flex;
     align-items: center;
@@ -346,9 +386,9 @@ body {
 }
 
 .modal-content {
-    background: rgba(20, 20, 40, 0.9);
-    border: 1px solid var(--neon-purple);
-    box-shadow: 0 0 30px rgba(188, 19, 254, 0.4);
+    background: rgba(5, 20, 5, 0.9);
+    border: 1px solid var(--neon-main);
+    box-shadow: 0 0 40px rgba(57, 255, 20, 0.15), inset 0 0 20px rgba(57, 255, 20, 0.05);
     padding: 40px;
     border-radius: 16px;
     width: 100%;
@@ -357,19 +397,20 @@ body {
 }
 
 .modal-content h2 {
-    color: var(--neon-blue);
+    color: var(--neon-main);
     margin-bottom: 25px;
     text-transform: uppercase;
     letter-spacing: 2px;
+    text-shadow: 0 0 10px rgba(57, 255, 20, 0.4);
 }
 
 #username-input {
     width: 100%;
     padding: 15px;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(0, 0, 0, 0.3);
     border: 1px solid var(--glass-border);
     border-radius: 8px;
-    color: white;
+    color: var(--neon-main);
     margin-bottom: 25px;
     font-size: 16px;
     outline: none;
@@ -378,28 +419,31 @@ body {
 }
 
 #username-input:focus {
-    border-color: var(--neon-blue);
-    box-shadow: 0 0 15px rgba(0, 243, 255, 0.3);
+    border-color: var(--neon-main);
+    box-shadow: 0 0 15px rgba(57, 255, 20, 0.3);
+    background: rgba(0, 0, 0, 0.5);
 }
 
 .modal-content button {
     width: 100%;
     padding: 15px;
-    background: linear-gradient(90deg, var(--neon-purple), var(--neon-blue));
+    background: linear-gradient(90deg, #22aa00, var(--neon-main));
     border: none;
     border-radius: 8px;
-    color: white;
+    color: #000;
     font-weight: bold;
     font-size: 16px;
     cursor: pointer;
     text-transform: uppercase;
     letter-spacing: 1px;
-    transition: transform 0.2s;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 0 15px rgba(57, 255, 20, 0.3);
 }
 
 .modal-content button:hover {
     transform: translateY(-2px);
-    box-shadow: 0 5px 20px rgba(188, 19, 254, 0.5);
+    box-shadow: 0 0 25px rgba(57, 255, 20, 0.6);
+    filter: brightness(1.1);
 }
 
 .hidden {
@@ -429,17 +473,18 @@ body {
     border-radius: 4px;
     margin-bottom: 2px;
     cursor: default;
+    transition: background 0.2s;
 }
 
 .voice-user:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(57, 255, 20, 0.1);
 }
 
 .voice-avatar {
     width: 24px;
     height: 24px;
     border-radius: 50%;
-    background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
+    background: linear-gradient(135deg, var(--neon-main), #004400);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -448,16 +493,17 @@ body {
     margin-right: 8px;
     border: 1px solid var(--glass-border);
     transition: box-shadow 0.1s;
+    color: #000;
 }
 
 .voice-avatar.speaking {
-    box-shadow: 0 0 0 2px #43b581, 0 0 8px #43b581;
-    border-color: #43b581;
+    box-shadow: 0 0 0 2px var(--neon-main), 0 0 10px var(--neon-main);
+    border-color: var(--neon-main);
 }
 
 .voice-username {
     font-size: 14px;
-    color: var(--text-normal);
+    color: var(--text-secondary);
 }
 
 /* Settings Modal */
@@ -482,15 +528,21 @@ body {
 .setting-group select {
     width: 100%;
     padding: 10px;
-    background: rgba(0, 0, 0, 0.3);
+    background: rgba(0, 10, 0, 0.5);
     border: 1px solid var(--glass-border);
     border-radius: 4px;
-    color: var(--text-primary);
+    color: var(--neon-main);
     outline: none;
 }
 
 .setting-group select:focus {
-    border-color: var(--neon-blue);
+    border-color: var(--neon-main);
+    box-shadow: 0 0 10px rgba(57, 255, 20, 0.2);
+}
+
+.setting-group select option {
+    background: #051005;
+    color: var(--text-primary);
 }
 
 .mic-test-container {
@@ -500,28 +552,91 @@ body {
     border-radius: 5px;
     overflow: hidden;
     margin-top: 10px;
+    border: 1px solid rgba(57, 255, 20, 0.1);
 }
 
 .mic-bar {
     width: 0%;
     height: 100%;
-    background: linear-gradient(90deg, var(--neon-green), var(--neon-blue));
-    transition: width 0.1s ease;
+    background: linear-gradient(90deg, #00aa00, var(--neon-main));
+    transition: width 0.05s ease;
+    box-shadow: 0 0 5px var(--neon-main);
 }
 
 .small-text {
     font-size: 12px;
-    color: var(--text-muted);
+    color: var(--text-secondary);
     margin-top: 5px;
+    opacity: 0.7;
 }
 
 #close-settings-btn {
     margin-top: 10px;
     background: transparent;
     border: 1px solid var(--glass-border);
+    color: var(--neon-main);
+    box-shadow: none;
 }
 
 #close-settings-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(57, 255, 20, 0.1);
     transform: none;
+    box-shadow: 0 0 10px rgba(57, 255, 20, 0.2);
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .app-container {
+        position: relative;
+    }
+
+    .servers-sidebar {
+        display: none;
+        /* Hide for now, or make bottom bar */
+    }
+
+    .channels-sidebar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 280px;
+        z-index: 1000;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease-in-out;
+        background: rgba(5, 20, 5, 0.95);
+        border-right: 1px solid var(--neon-main);
+        box-shadow: 5px 0 20px rgba(0, 0, 0, 0.5);
+    }
+
+    .channels-sidebar.open {
+        transform: translateX(0);
+    }
+
+    .main-chat-area {
+        width: 100%;
+    }
+
+    .chat-header {
+        padding-left: 15px;
+        /* adjust for menu button */
+    }
+
+    .menu-toggle {
+        display: block;
+        /* We'll need to add this element in HTML */
+        margin-right: 15px;
+        font-size: 24px;
+        color: var(--neon-main);
+        cursor: pointer;
+    }
+
+    .message {
+        max-width: 90%;
+    }
+
+    .modal-content {
+        width: 90%;
+        padding: 25px;
+    }
 }
