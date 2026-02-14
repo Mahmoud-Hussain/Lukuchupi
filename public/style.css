@@ -186,6 +186,10 @@ body {
     overflow: hidden;
 }
 
+.menu-toggle {
+    display: none;
+}
+
 .chat-header {
     height: 60px;
     padding: 0 20px;
@@ -588,25 +592,33 @@ body {
 @media (max-width: 768px) {
     .app-container {
         position: relative;
+        flex-direction: column;
+        /* Ensure vertical stacking if needed, though mostly hidden */
     }
 
     .servers-sidebar {
         display: none;
-        /* Hide for now, or make bottom bar */
     }
 
     .channels-sidebar {
-        position: absolute;
+        position: fixed;
+        /* Fixed to cover screen correctly */
         top: 0;
         left: 0;
         height: 100%;
-        width: 280px;
-        z-index: 1000;
+        width: 85%;
+        /* Wider for better mobile usability */
+        max-width: 320px;
+        z-index: 2000;
+        /* Higher than everything else */
         transform: translateX(-100%);
-        transition: transform 0.3s ease-in-out;
-        background: rgba(5, 20, 5, 0.95);
+        transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+        background: rgba(5, 15, 5, 0.98);
+        /* Less transparent for readability */
         border-right: 1px solid var(--neon-main);
-        box-shadow: 5px 0 20px rgba(0, 0, 0, 0.5);
+        box-shadow: 10px 0 30px rgba(0, 0, 0, 0.7);
+        display: flex;
+        /* Ensure flex layout works */
     }
 
     .channels-sidebar.open {
@@ -615,28 +627,95 @@ body {
 
     .main-chat-area {
         width: 100%;
+        height: 100vh;
+        /* Full viewport height */
     }
 
     .chat-header {
-        padding-left: 15px;
-        /* adjust for menu button */
+        padding: 0 15px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        width: 100%;
+        justify-content: flex-start;
+        /* Align start */
     }
 
     .menu-toggle {
-        display: block;
-        /* We'll need to add this element in HTML */
+        display: flex;
+        align-items: center;
+        justify-content: center;
         margin-right: 15px;
         font-size: 24px;
         color: var(--neon-main);
         cursor: pointer;
+        width: 44px;
+        /* Minimum touch target */
+        height: 44px;
+        border-radius: 50%;
+        transition: background 0.2s;
+    }
+
+    .menu-toggle:active {
+        background: rgba(57, 255, 20, 0.1);
+    }
+
+    .channel-icon {
+        margin-right: 8px;
+    }
+
+    /* Buttons Optimizations */
+    .control-btn {
+        width: 44px;
+        height: 44px;
+        /* Larger touch target */
+        margin-left: 10px;
+    }
+
+    .user-controls {
+        padding: 15px;
+        background: rgba(0, 10, 0, 0.8);
+        /* Darker background */
+    }
+
+    .channel {
+        padding: 15px;
+        /* Larger tap area */
+        margin-bottom: 8px;
+    }
+
+    /* Input Area Adjustments */
+    .message-input-area {
+        padding: 10px 15px;
+        background: rgba(5, 15, 5, 0.95);
+    }
+
+    #message-form {
+        padding: 8px 15px;
+        border-radius: 30px;
+    }
+
+    #message-input {
+        font-size: 16px;
+        /* Prevents iOS zoom */
+        padding: 8px 0;
     }
 
     .message {
-        max-width: 90%;
+        max-width: 88%;
+        font-size: 15px;
     }
 
+    /* Modal Adjustments */
     .modal-content {
         width: 90%;
         padding: 25px;
+        margin: 0 auto;
+    }
+
+    .modal-content button {
+        padding: 16px;
+        /* Easier to tap */
+        font-size: 18px;
     }
 }
